@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Todo Calendar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fff;
+            --ink: #15171c;
+            --sub: #6b7280;
+            --line: #e5e7eb;
+            --tint: #f3f4f7;
+            --ac: #2447e0;
+            --late: #c2331f
+        }
+
+        :root[data-theme=dark] {
+            --bg: #101218;
+            --ink: #e7e9ee;
+            --sub: #8d94a3;
+            --line: #242833;
+            --tint: #1a1d26;
+            --ac: #7b95ff;
+            --late: #ff8a73
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html {
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font: 15px/1.55 "IBM Plex Sans KR", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+            color: inherit
+        }
+
+        button {
+            cursor: pointer;
+            background: none;
+            border: 0;
+            padding: 0
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--ac);
+            outline-offset: 2px
+        }
+
+        .sub {
+            color: var(--sub);
+            transition: color .3s ease;
+        }
+
+        .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 28px
+        }
+
+        .bar {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            height: 56px;
+            border-bottom: 1px solid var(--line);
+            transition: border-color .3s ease;
+        }
+
+        .brand {
+            font-weight: 600;
+            font-size: 15px;
+            transition: color .3s ease;
+        }
+
+        .wk {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 13px;
+            color: var(--sub);
+            transition: color .3s ease;
+        }
+
+        .line {
+            flex: 0 1 160px;
+            height: 3px;
+            background: var(--line);
+            border-radius: 2px;
+            overflow: hidden;
+            transition: background-color .3s ease;
+        }
+
+        .line i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: var(--ac);
+            transition: width .3s
+        }
+
+        .wk b {
+            color: var(--ink);
+            font-weight: 500;
+            transition: color .3s ease;
+        }
+
+        .txt {
+            font-size: 13px;
+            color: var(--sub);
+            padding: 6px 2px;
+            margin-left: 10px;
+            transition: color .3s ease;
+        }
+
+        .txt:hover {
+            color: var(--ink)
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 380px;
+            gap: 0;
+            min-height: calc(100vh - 57px)
+        }
+
+        .cal {
+            padding: 28px 32px 40px 0
+        }
+
+        .mh {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 18px
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 40px;
+            line-height: 1;
+            font-weight: 600;
+            letter-spacing: -.02em
+        }
+
+        h2 small {
+            font-size: 15px;
+            font-weight: 400;
+            color: var(--sub);
+            margin-left: 10px;
+            letter-spacing: 0;
+            transition: color .3s ease;
+        }
+
+        .nav button {
+            font-size: 14px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: var(--sub);
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        .nav button:hover {
+            background: var(--tint);
+            color: var(--ink)
+        }
+
+        .nav #today {
+            color: var(--ac);
+            font-weight: 500;
+            transition: color .3s ease;
+        }
+
+        .dow,
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr)
+        }
+
+        .dow div {
+            font-size: 12px;
+            color: var(--sub);
+            padding: 0 8px 6px;
+            transition: color .3s ease;
+        }
+
+        .dow div:first-child {
+            color: var(--late);
+            transition: color .3s ease;
+        }
+
+        .cell {
+            min-height: 104px;
+            border-top: 1px solid var(--line);
+            padding: 6px 8px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+            border-radius: 0;
+            transition: background-color .3s ease, border-color .3s ease;
+        }
+
+        .cell:hover {
+            background: var(--tint)
+        }
+
+        .cell.other {
+            opacity: .35
+        }
+
+        .cell.sel {
+            background: var(--tint)
+        }
+
+        .num {
+            font-size: 13px;
+            width: 24px;
+            height: 24px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            font-variant-numeric: tabular-nums;
+            margin-left: -4px;
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        .cell.sun .num {
+            color: var(--late)
+        }
+
+        .cell.sel .num {
+            background: var(--ink);
+            color: var(--bg)
+        }
+
+        .cell.today .num {
+            background: var(--ac);
+            color: #fff
+        }
+
+        .ln {
+            font-size: 12px;
+            line-height: 1.35;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color .3s ease;
+        }
+
+        .ln.high {
+            font-weight: 600
+        }
+
+        .ln.done {
+            color: var(--sub);
+            text-decoration: line-through;
+            transition: color .3s ease;
+        }
+
+        .more {
+            font-size: 11px;
+            color: var(--sub);
+            transition: color .3s ease;
+        }
+
+        .dots {
+            display: none;
+            gap: 3px
+        }
+
+        .dots i {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--ink);
+            transition: background-color .3s ease;
+        }
+
+        .day {
+            border-left: 1px solid var(--line);
+            padding: 28px 0 40px 32px;
+            transition: border-color .3s ease;
+        }
+
+        .day h3 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: -.01em;
+            line-height: 1.2;
+            transition: color .3s ease;
+        }
+
+        #cnt {
+            margin: 2px 0 18px;
+            font-size: 13px;
+            transition: color .3s ease;
+        }
+
+        .add {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid var(--ink);
+            padding-bottom: 4px;
+            transition: border-color .3s ease;
+        }
+
+        .add input {
+            flex: 1;
+            border: 0;
+            background: none;
+            padding: 8px 0;
+            font-size: 16px;
+            min-width: 0;
+            transition: color .3s ease;
+        }
+
+        .add input:focus {
+            outline: 0
+        }
+
+        .add:focus-within {
+            border-color: var(--ac)
+        }
+
+        .go {
+            background: var(--ink);
+            color: var(--bg);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 0 14px;
+            border-radius: 5px;
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        .extra {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px
+        }
+
+        .extra[hidden] {
+            display: none
+        }
+
+        .extra textarea {
+            grid-column: 1/-1
+        }
+
+        .more-b {
+            font-size: 13px;
+            color: var(--sub);
+            margin-top: 8px;
+            transition: color .3s ease;
+        }
+
+        .more-b:hover {
+            color: var(--ink)
+        }
+
+        input[type=date],
+        input[type=search],
+        select,
+        textarea,
+        .mi {
+            border: 1px solid var(--line);
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 8px 10px;
+            width: 100%;
+            transition: border-color .3s ease, background-color .3s ease, color .3s ease;
+        }
+
+        textarea {
+            min-height: 60px;
+            line-height: 1.5;
+            box-sizing: border-box;
+            overflow: hidden;
+            resize: none;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--sub);
+            margin-bottom: 3px
+        }
+
+        .tabs {
+            display: flex;
+            gap: 16px;
+            margin: 26px 0 10px;
+            border-bottom: 1px solid var(--line);
+            transition: border-color .3s ease;
+        }
+
+        .tabs button {
+            font-size: 14px;
+            color: var(--sub);
+            padding: 6px 0;
+            margin-bottom: -1px;
+            border-bottom: 2px solid transparent;
+            transition: color .3s ease, border-color .3s ease;
+        }
+
+        .tabs button[aria-pressed=true] {
+            color: var(--ink);
+            font-weight: 500;
+            border-color: var(--ink)
+        }
+
+        .flt {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px
+        }
+
+        .flt select,
+        .flt input {
+            font-size: 13px;
+            padding: 5px 8px;
+            transition: border-color .3s ease, background-color .3s ease, color .3s ease;
+        }
+
+        .list {
+            margin: 0;
+            padding: 0;
+            list-style: none
+        }
+
+        .it {
+            display: grid;
+            grid-template-columns: 22px 1fr auto;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--line);
+            align-items: start;
+            transition: border-color .3s ease;
+        }
+
+        .ck {
+            width: 20px;
+            height: 20px;
+            border: 1.5px solid var(--sub);
+            border-radius: 4px;
+            margin-top: 2px;
+            position: relative;
+            transition: border-color .3s ease, background-color .3s ease;
+        }
+
+        .ck:hover {
+            border-color: var(--ink)
+        }
+
+        .it.done .ck {
+            background: var(--ac);
+            border-color: var(--ac)
+        }
+
+        .it.done .ck::after {
+            content: "";
+            position: absolute;
+            left: 5px;
+            top: 1px;
+            width: 5px;
+            height: 10px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg)
+        }
+
+        .bd {
+            text-align: left;
+            min-width: 0
+        }
+
+        .t {
+            font-weight: 500;
+            word-break: break-word
+        }
+
+        .it.high .t {
+            font-weight: 600
+        }
+
+        .it.done .t {
+            color: var(--sub);
+            text-decoration: line-through;
+            font-weight: 400
+        }
+
+        .d {
+            font-size: 13px;
+            color: var(--sub);
+            margin-top: 1px;
+            word-break: break-word;
+            transition: color .3s ease;
+        }
+
+        .m {
+            font-size: 12px;
+            color: var(--sub);
+            margin-top: 4px;
+            transition: color .3s ease;
+        }
+
+        .m span {
+            margin-right: 12px
+        }
+
+        .m .hi {
+            color: var(--ac);
+            font-weight: 500
+        }
+
+        .m .late {
+            color: var(--late);
+            font-weight: 500
+        }
+
+        .del {
+            font-size: 12px;
+            color: var(--sub);
+            padding: 2px 4px;
+            opacity: .55;
+            transition: color .3s ease, opacity .2s ease;
+        }
+
+        .it:hover .del,
+        .del:focus-visible {
+            opacity: 1
+        }
+
+        .del:hover {
+            color: var(--late)
+        }
+
+        .empty {
+            padding: 36px 0;
+            color: var(--sub);
+            font-size: 14px;
+            transition: color .3s ease;
+        }
+
+        .empty b {
+            display: block;
+            color: var(--ink);
+            font-weight: 500;
+            margin-bottom: 2px;
+            transition: color .3s ease;
+        }
+
+        #pop {
+            position: fixed;
+            z-index: 40;
+            background: var(--ink);
+            color: var(--bg);
+            border-radius: 6px;
+            padding: 8px 11px;
+            font-size: 12.5px;
+            max-width: 250px;
+            pointer-events: none;
+            display: none;
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        #pop p {
+            margin: 3px 0 0
+        }
+
+        #modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 12, 18, .5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 50
+        }
+
+        #modal.on {
+            display: flex
+        }
+
+        .dlg {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 22px;
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: background-color .3s ease;
+        }
+
+        .dlg h3 {
+            margin: 0;
+            font-size: 18px;
+            transition: color .3s ease;
+        }
+
+        .two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        .acts {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px
+        }
+
+        .btn {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 7px 14px;
+            font-size: 14px;
+            transition: border-color .3s ease, background-color .3s ease, color .3s ease;
+        }
+
+        .btn.pri {
+            background: var(--ink);
+            color: var(--bg);
+            border-color: var(--ink)
+        }
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            transform: translate(-50%, 16px);
+            background: var(--ink);
+            color: var(--bg);
+            padding: 10px 16px;
+            border-radius: 6px;
+            display: flex;
+            gap: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: .2s, background-color .3s ease, color .3s ease;
+            z-index: 60;
+            font-size: 14px
+        }
+
+        #toast.on {
+            opacity: 1;
+            transform: translate(-50%, 0);
+            pointer-events: auto
+        }
+
+        #toast button {
+            font-weight: 600;
+            text-decoration: underline;
+            transition: color .3s ease;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--sub);
+            padding: 14px 0 28px;
+            border-top: 1px solid var(--line);
+            transition: color .3s ease, border-color .3s ease;
+        }
+
+        @media(max-width:920px) {
+            .app {
+                grid-template-columns: 1fr
+            }
+
+            .cal {
+                padding-right: 0
+            }
+
+            .day {
+                border-left: 0;
+                border-top: 1px solid var(--line);
+                padding-left: 0
+            }
+
+            .wk .line,
+            #all {
+                display: none
+            }
+        }
+
+        @media(max-width:600px) {
+            .wrap {
+                padding: 0 16px
+            }
+
+            .bar {
+                gap: 8px
+            }
+
+            .brand {
+                display: none
+            }
+
+            .cell {
+                min-height: 54px;
+                padding: 4px
+            }
+
+            .ln,
+            .more {
+                display: none
+            }
+
+            .dots {
+                display: flex
+            }
+
+            h2 {
+                font-size: 32px
+            }
+
+            .hint {
+                display: none
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            * {
+                transition: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="wrap bar">
+        <b class="brand">Todo Calendar</b>
+        <div class="wk"><span>이번 주 <b id="wkt">0 / 0</b> 완료</span>
+            <div class="line"><i id="wkb"></i></div><span id="all"></span>
+        </div>
+        <nav><button class="txt" id="theme">다크 모드</button></nav>
+    </header>
+
+    <main class="wrap app">
+        <section class="cal" aria-label="달력">
+            <div class="mh">
+                <h2><span id="mm"></span><small id="yy"></small></h2>
+                <div class="nav"><button id="prev">이전 달</button><button id="today">오늘</button><button id="next">다음
+                        달</button></div>
+            </div>
+            <div class="dow">
+                <div>일</div>
+                <div>월</div>
+                <div>화</div>
+                <div>수</div>
+                <div>목</div>
+                <div>금</div>
+                <div>토</div>
+            </div>
+            <div class="grid" id="grid"></div>
+        </section>
+
+        <aside class="day">
+            <h3 id="lt"></h3>
+            <p class="sub" id="cnt"></p>
+            <form id="addf">
+                <div class="add"><input type="text" id="title" placeholder="할 일을 적고 Enter" maxlength="80"
+                        aria-label="할 일 제목" required><button class="go" type="submit">추가</button></div>
+                <button type="button" class="more-b" id="more" aria-expanded="false">설명·우선순위 더 입력</button>
+                <div class="extra" id="extra" hidden>
+                    <textarea id="desc" placeholder="설명 (선택)" aria-label="설명"></textarea>
+                    <div><label for="prio">우선순위</label><select id="prio">
+                            <option value="low">낮음</option>
+                            <option value="medium" selected>보통</option>
+                            <option value="high">높음</option>
+                        </select></div>
+                    <div><label for="cat">카테고리</label><select id="cat">
+                            <option value="etc">기타</option>
+                            <option value="work">업무</option>
+                            <option value="study">공부</option>
+                            <option value="personal">개인</option>
+                        </select></div>
+                </div>
+            </form>
+            <div class="tabs" id="cats"><button data-c="all" aria-pressed="true">전체</button><button data-c="work"
+                    aria-pressed="false">업무</button><button data-c="study" aria-pressed="false">공부</button><button
+                    data-c="personal" aria-pressed="false">개인</button><button data-c="etc"
+                    aria-pressed="false">기타</button></div>
+            <div class="flt">
+                <select id="fs" aria-label="상태">
+                    <option value="all">모든 상태</option>
+                    <option value="active">미완료만</option>
+                    <option value="done">완료만</option>
+                </select>
+                <select id="fp" aria-label="우선순위">
+                    <option value="all">모든 우선순위</option>
+                    <option value="high">높음</option>
+                    <option value="medium">보통</option>
+                    <option value="low">낮음</option>
+                </select>
+                <input type="search" id="q" placeholder="전체 검색" aria-label="전체 날짜에서 검색">
+            </div>
+            <ul class="list" id="list"></ul>
+            <p class="hint">T 오늘 · N 새 할 일 · ← → 월 이동 · Esc 닫기</p>
+        </aside>
+    </main>
+
+    <div id="pop"></div>
+    <div id="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+        <form class="dlg" id="editf">
+            <h3 id="mt">할 일 수정</h3><input type="hidden" id="mid">
+            <div><label for="mti">제목</label><input class="mi" type="text" id="mti" required maxlength="80"></div>
+            <div><label for="mde">설명</label><textarea id="mde"></textarea></div>
+            <div class="two">
+                <div><label for="md">날짜</label><input type="date" id="md" required></div>
+                <div><label for="mp">우선순위</label><select id="mp">
+                        <option value="low">낮음</option>
+                        <option value="medium">보통</option>
+                        <option value="high">높음</option>
+                    </select></div>
+            </div>
+            <div><label for="mc">카테고리</label><select id="mc">
+                    <option value="etc">기타</option>
+                    <option value="work">업무</option>
+                    <option value="study">공부</option>
+                    <option value="personal">개인</option>
+                </select></div>
+            <div class="acts"><button type="button" class="txt" id="mdel" style="margin:0">삭제</button><span><button
+                        type="button" class="btn" id="mcan">취소</button> <button class="btn pri"
+                        type="submit">저장</button></span></div>
+        </form>
+    </div>
+    <div id="toast"><span id="tmsg"></span><button id="undo">되돌리기</button></div>
+
+    <script>
+        const KEY = 'todo_calendar_data', $ = id => document.getElementById(id);
+        const CAT = { work: '업무', study: '공부', personal: '개인', etc: '기타' }, PR = { high: '높음', medium: '보통', low: '낮음' }, ORD = { high: 0, medium: 1, low: 2 }, DAY = ['일', '월', '화', '수', '목', '금', '토'];
+        const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const now = new Date();
+        let S = { todos: [], y: now.getFullYear(), m: now.getMonth(), sel: fmt(now), cat: 'all', st: 'all', pr: 'all', q: '' }, last = null, tt;
+
+        function load() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+                if (Array.isArray(raw)) S.todos = raw.map(t => { if (t.category === 'done') { t.completed = true; t.category = 'etc' } return { ...t, completed: !!t.completed, category: CAT[t.category] ? t.category : 'etc' } });
+                else S.todos = [{ id: 't1', title: '이 항목을 눌러 수정해 보세요', description: '네모를 누르면 완료, 삭제는 5초 안에 되돌릴 수 있어요.', date: fmt(now), priority: 'high', category: 'etc', completed: false }];
+            } catch (e) { S.todos = [] }
+            setTheme(localStorage.getItem('todo_theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'));
+        }
+        function save() { try { localStorage.setItem(KEY, JSON.stringify(S.todos)) } catch (e) { toast('저장할 수 없어요. 새로고침하면 데이터가 사라질 수 있어요.') } render() }
+        function setTheme(t) { document.documentElement.dataset.theme = t; $('theme').textContent = t === 'dark' ? '라이트 모드' : '다크 모드'; try { localStorage.setItem('todo_theme', t) } catch (e) { } }
+        function toast(msg, undo) { $('tmsg').textContent = msg; $('undo').style.display = undo ? '' : 'none'; last = undo || null; $('toast').classList.add('on'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('on'), 5000) }
+        $('undo').onclick = () => { if (last) last(); last = null; $('toast').classList.remove('on') };
+
+        const cmp = (a, b) => (a.completed - b.completed) || (ORD[a.priority] - ORD[b.priority]) || String(a.id).localeCompare(b.id);
+        function render() { cal(); list(); prog() }
+
+        function cal() {
+            $('mm').textContent = `${S.m + 1}월`; $('yy').textContent = `${S.y}년`;
+            const first = new Date(S.y, S.m, 1).getDay(), days = new Date(S.y, S.m + 1, 0).getDate(), total = Math.ceil((first + days) / 7) * 7, td = fmt(now), by = {};
+            S.todos.forEach(t => (by[t.date] ??= []).push(t));
+            let h = '';
+            for (let i = 0; i < total; i++) {
+                const d = new Date(S.y, S.m, 1 - first + i), s = fmt(d), L = (by[s] || []).slice().sort(cmp), open = L.filter(t => !t.completed).length;
+                const cls = ['cell', d.getMonth() !== S.m && 'other', s === S.sel && 'sel', s === td && 'today', i % 7 === 0 && 'sun'].filter(Boolean).join(' ');
+                h += `<button class="${cls}" data-d="${s}" aria-label="${d.getMonth() + 1}월 ${d.getDate()}일, 남은 할 일 ${open}개"><span class="num">${d.getDate()}</span>`
+                    + L.slice(0, 3).map(t => `<span class="ln ${t.priority === 'high' ? 'high' : ''} ${t.completed ? 'done' : ''}">${esc(t.title)}</span>`).join('')
+                    + (L.length > 3 ? `<span class="more">외 ${L.length - 3}개</span>` : '')
+                    + (L.length ? `<span class="dots">${'<i></i>'.repeat(Math.min(L.length, 3))}</span>` : '') + `</button>`;
+            }
+            $('grid').innerHTML = h;
+        }
+
+        function list() {
+            const q = S.q.trim().toLowerCase(), td = fmt(now), d = new Date(S.sel + 'T00:00'), dayAll = S.todos.filter(t => t.date === S.sel);
+            let L = S.todos.filter(t => q ? (t.title + ' ' + (t.description || '')).toLowerCase().includes(q) : t.date === S.sel);
+            if (S.cat !== 'all') L = L.filter(t => t.category === S.cat);
+            if (S.st === 'active') L = L.filter(t => !t.completed);
+            if (S.st === 'done') L = L.filter(t => t.completed);
+            if (S.pr !== 'all') L = L.filter(t => t.priority === S.pr);
+            L.sort(q ? (a, b) => a.date.localeCompare(b.date) || cmp(a, b) : cmp);
+            $('lt').textContent = q ? '검색 결과' : `${d.getMonth() + 1}월 ${d.getDate()}일 ${DAY[d.getDay()]}요일${S.sel === td ? ' (오늘)' : ''}`;
+            $('cnt').textContent = q ? `${L.length}개를 찾았어요` : dayAll.length ? `${dayAll.length}개 중 ${dayAll.filter(t => !t.completed).length}개 남음` : '아직 할 일이 없어요';
+            $('list').innerHTML = L.length ? L.map(t => `<li class="it ${t.priority} ${t.completed ? 'done' : ''}">
+    <button class="ck" data-k="${t.id}" aria-label="${t.completed ? '미완료로 변경' : '완료로 변경'}"></button>
+    <button class="bd" data-e="${t.id}"><div class="t">${esc(t.title)}</div>${t.description ? `<div class="d">${esc(t.description)}</div>` : ''}
+    <div class="m">${q ? `<span>${t.date}</span>` : ''}<span>${CAT[t.category]}</span>${t.priority === 'high' ? '<span class="hi">중요</span>' : t.priority === 'low' ? '<span>나중에</span>' : ''}${!t.completed && t.date < td ? '<span class="late">기한 지남</span>' : ''}</div></button>
+    <button class="del" data-x="${t.id}" aria-label="${esc(t.title)} 삭제">삭제</button></li>`).join('')
+                : `<li class="empty"><b>${q ? '검색 결과가 없어요' : dayAll.length ? '조건에 맞는 항목이 없어요' : '비어 있는 날이에요'}</b>${q || dayAll.length ? '검색어나 필터를 바꿔 보세요.' : '위 입력란에 적고 Enter를 누르면 추가돼요.'}</li>`;
+        }
+
+        function prog() {
+            const st = new Date(now); st.setDate(now.getDate() - now.getDay()); const en = new Date(st); en.setDate(st.getDate() + 6);
+            const a = fmt(st), b = fmt(en), W = S.todos.filter(t => t.date >= a && t.date <= b), wd = W.filter(t => t.completed).length;
+            $('wkt').textContent = `${wd} / ${W.length}`; $('wkb').style.width = (W.length ? Math.round(wd / W.length * 100) : 0) + '%';
+            $('all').textContent = `전체 ${S.todos.filter(t => t.completed).length} / ${S.todos.length}`;
+        }
+
+        const pop = $('pop');
+        let hoverCell = null;
+
+        function positionPop(cell) {
+            if (!cell) return;
+            const L = S.todos.filter(t => t.date === cell.dataset.d).sort(cmp);
+            if (!L.length) return pop.style.display = 'none';
+            pop.innerHTML = L.map(t => `<p>${t.completed ? '✓ ' : ''}${esc(t.title)} <span style="opacity:.65">${CAT[t.category]}, ${PR[t.priority]}</span></p>`).join('');
+            pop.style.display = 'block';
+            const r = cell.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+            pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+            pop.style.top = (r.bottom + h + 8 > innerHeight ? r.top - h - 6 : r.bottom + 6) + 'px';
+        }
+
+        function updatePopPosition() {
+            if (hoverCell) positionPop(hoverCell);
+        }
+
+        $('grid').addEventListener('mouseover', e => {
+            if (!matchMedia('(hover:hover)').matches) return;
+            const c = e.target.closest('.cell'); if (!c) return;
+            hoverCell = c;
+            positionPop(c);
+        });
+        $('grid').addEventListener('mouseleave', () => { hoverCell = null; pop.style.display = 'none'; });
+        window.addEventListener('scroll', updatePopPosition, { passive: true });
+        window.addEventListener('resize', updatePopPosition);
+        $('grid').addEventListener('click', e => { const c = e.target.closest('.cell'); if (!c) return; pop.style.display = 'none'; S.sel = c.dataset.d; const d = new Date(S.sel + 'T00:00'); S.y = d.getFullYear(); S.m = d.getMonth(); render() });
+
+        function go(n) { S.m += n; if (S.m < 0) { S.m = 11; S.y-- } if (S.m > 11) { S.m = 0; S.y++ } render() }
+        function today() { S.y = now.getFullYear(); S.m = now.getMonth(); S.sel = fmt(now); render() }
+        $('prev').onclick = () => go(-1); $('next').onclick = () => go(1); $('today').onclick = today;
+        $('theme').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+        $('more').onclick = () => { const e = $('extra'); e.hidden = !e.hidden; $('more').setAttribute('aria-expanded', !e.hidden) };
+
+        $('addf').onsubmit = e => {
+            e.preventDefault(); const t = $('title').value.trim(); if (!t) return;
+            S.todos.push({ id: 't' + Date.now() + Math.random().toString(36).slice(2, 5), title: t, description: $('desc').value.trim(), date: S.sel, priority: $('prio').value, category: $('cat').value, completed: false });
+            $('title').value = ''; $('desc').value = ''; $('prio').value = 'medium'; $('cat').value = 'etc'; save(); $('title').focus();
+        };
+        $('list').addEventListener('click', e => {
+            const k = e.target.closest('[data-k]'), x = e.target.closest('[data-x]'), ed = e.target.closest('[data-e]');
+            if (k) { const t = S.todos.find(t => t.id === k.dataset.k); t.completed = !t.completed; save() } else if (x) del(x.dataset.x); else if (ed) openM(ed.dataset.e);
+        });
+        function del(id) { const i = S.todos.findIndex(t => t.id === id); if (i < 0) return; const [t] = S.todos.splice(i, 1); save(); toast('삭제했어요.', () => { S.todos.splice(i, 0, t); save() }) }
+
+        $('cats').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.cat = b.dataset.c; document.querySelectorAll('#cats button').forEach(x => x.setAttribute('aria-pressed', x === b)); list() };
+        $('fs').onchange = e => { S.st = e.target.value; list() }; $('fp').onchange = e => { S.pr = e.target.value; list() }; $('q').oninput = e => { S.q = e.target.value; list() };
+
+        function openM(id) {
+            const t = S.todos.find(t => t.id === id); if (!t) return;
+            $('mid').value = id; $('md').value = t.date; $('mti').value = t.title; $('mde').value = t.description || ''; $('mp').value = t.priority; $('mc').value = t.category;
+            $('modal').classList.add('on'); $('mti').focus()
+        }
+        const closeM = () => $('modal').classList.remove('on');
+        $('mcan').onclick = closeM; $('modal').onclick = e => { if (e.target === $('modal')) closeM() };
+        $('mdel').onclick = () => { const id = $('mid').value; closeM(); del(id) };
+        $('editf').onsubmit = e => {
+            e.preventDefault(); const id = $('mid').value;
+            S.todos = S.todos.map(t => t.id === id ? { ...t, date: $('md').value, title: $('mti').value.trim(), description: $('mde').value.trim(), priority: $('mp').value, category: $('mc').value } : t); closeM(); save()
+        };
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        ['desc', 'mde'].forEach(id => {
+            const el = $(id);
+            if (el) {
+                el.addEventListener('input', () => autoResize(el));
+                autoResize(el);
+            }
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeM(); return }
+            if (e.target.matches('input,textarea,select') || e.metaKey || e.ctrlKey || $('modal').classList.contains('on')) return;
+            if (e.key === 't' || e.key === 'T') today(); else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); $('title').focus() }
+            else if (e.key === 'ArrowLeft') go(-1); else if (e.key === 'ArrowRight') go(1);
+        });
+        load(); render();
+    </script>
+</body>
+
+</html>
