@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full" data-type="software" data-radius="soft" data-buttons="solid" data-motion="full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="page-type" content="software">
+    <meta name="site-kind" content="software">
+    <title>Todo Calendar — 당신의 일정을 한눈에</title>
+    <meta name="description" content="캘린더와 할 일을 한 화면에. 오늘 할 일에 집중하고 주간 완료율을 확인하세요. 다크 모드 지원.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        paper: {
+                            50: '#faf9f7', 100: '#f3f1ed', 200: '#e7e4de', 300: '#d6d2ca',
+                            400: '#b8b3a8', 500: '#9a9589', 600: '#7d7970', 700: '#646159',
+                            800: '#504e48', 900: '#42403b', 950: '#262522',
+                        },
+                        ink: {
+                            50: '#f0f0eb', 100: '#e0e0d9', 200: '#c1c0b7', 300: '#a09f94',
+                            400: '#7d7c70', 500: '#605f54', 600: '#4d4c42', 700: '#3e3d35',
+                            800: '#33322c', 900: '#2b2a25', 950: '#161614',
+                        },
+                        pen: {
+                            400: '#5a8fd9', 500: '#3b7dd8', 600: '#2d6bc4', 700: '#25569e',
+                        },
+                    },
+                    fontSize: {
+                        'xs': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.01em' }],
+                        'sm': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0.01em' }],
+                        'base': ['1rem', { lineHeight: '1.5', letterSpacing: '0.01em' }],
+                        'lg': ['1.125rem', { lineHeight: '1.4', letterSpacing: '0.01em' }],
+                        'xl': ['1.25rem', { lineHeight: '1.35', letterSpacing: '0.01em' }],
+                        '2xl': ['1.5rem', { lineHeight: '1.3', letterSpacing: '0.01em' }],
+                    },
+                    spacing: {
+                        '0.5': '2px', '1': '4px', '1.5': '6px', '2': '8px', '2.5': '10px',
+                        '3': '12px', '3.5': '14px', '4': '16px', '5': '20px', '6': '24px',
+                        '7': '28px', '8': '32px', '9': '36px', '10': '40px',
+                    },
+                    borderRadius: {
+                        'control': '8px', 'card': '12px', 'panel': '16px',
+                    },
+                    transitionDuration: {
+                        'fast': '120ms', 'normal': '180ms', 'slow': '240ms',
+                    },
+                    transitionTimingFunction: {
+                        'default': 'cubic-bezier(0.2, 0, 0, 1)',
+                    },
+                    boxShadow: {
+                        'card-hover': '0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04)',
+                        'card-hover-dark': '0 4px 12px -2px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2)',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d6d2ca;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #646159;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #b8b3a8;
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #7d7970;
+        }
+
+        .calendar-cell {
+            min-height: 92px;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-cell {
+                min-height: 68px;
+            }
+        }
+
+        *:focus-visible {
+            outline: 2px solid #2d6bc4;
+            outline-offset: 2px;
+        }
+
+        .dark *:focus-visible {
+            outline-color: #5a8fd9;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Motion layer — hover micro-animations */
+        .btn-step {
+            transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), background-color 120ms cubic-bezier(0.2, 0, 0, 1), border-color 120ms cubic-bezier(0.2, 0, 0, 1), box-shadow 120ms cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .btn-step:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-step:active {
+            transform: translateY(0);
+        }
+
+        .card-lift {
+            transition: transform 180ms cubic-bezier(0.2, 0, 0, 1), box-shadow 180ms cubic-bezier(0.2, 0, 0, 1), border-color 180ms cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .card-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+        }
+
+        .dark .card-lift:hover {
+            box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+        }
+
+        .cell-hover {
+            transition: background-color 120ms cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .cell-hover:hover {
+            background-color: #f3f1ed;
+        }
+
+        .dark .cell-hover:hover {
+            background-color: #33322c;
+        }
+
+        /* Hero entrance */
+        [data-enter] {
+            opacity: 0;
+            transform: translateY(8px);
+            animation: hero-enter 400ms cubic-bezier(0.2, 0, 0, 1) forwards;
+        }
+
+        [data-enter-delay="1"] {
+            animation-delay: 80ms;
+        }
+
+        [data-enter-delay="2"] {
+            animation-delay: 160ms;
+        }
+
+        [data-enter-delay="3"] {
+            animation-delay: 240ms;
+        }
+
+        @keyframes hero-enter {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+            }
+
+            [data-enter] {
+                opacity: 1;
+                transform: none;
+                animation: none;
+            }
+        }
+
+        /* Equal edges - ensure content aligns to grid */
+        .wrap {
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        @media (min-width: 1024px) {
+            .wrap {
+                padding: 0 32px;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-paper-100 dark:bg-ink-950 text-ink-900 dark:text-paper-100 font-sans min-h-full flex flex-col transition-colors duration-normal">
+
+    <!-- Header (quiet chrome) -->
+    <header class="bg-paper-50 dark:bg-ink-900 border-b border-paper-200 dark:border-ink-800 sticky top-0 z-30"
+        data-enter data-enter-delay="1">
+        <div class="wrap py-4">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <!-- Title -->
+                <div class="flex items-center justify-between w-full sm:w-auto gap-4">
+                    <h1 class="text-2xl font-medium tracking-tight text-ink-900 dark:text-paper-100">Todo Calendar</h1>
+                    <button id="today-btn" type="button"
+                        class="sm:hidden btn-step px-3 py-2 text-sm font-medium bg-paper-100 dark:bg-ink-800 text-ink-700 dark:text-paper-300 hover:bg-paper-200 dark:hover:bg-ink-700 rounded-control flex items-center gap-2"
+                        aria-label="오늘로 이동">
+                        <i data-lucide="calendar" class="w-4 h-4"></i> 오늘
+                    </button>
+                </div>
+
+                <!-- Progress Bar & Actions -->
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6">
+                    <!-- Progress Bar (the one bright moment) -->
+                    <div class="flex-1 sm:w-64 bg-paper-100 dark:bg-ink-800/60 p-3 rounded-card border border-paper-200 dark:border-ink-700"
+                        data-enter data-enter-delay="2">
+                        <div class="flex justify-between items-center text-xs font-medium mb-2">
+                            <span class="text-ink-600 dark:text-paper-400">전체 달성률</span>
+                            <span id="progress-percent"
+                                class="text-pen-600 dark:text-pen-400 font-medium tabular-nums">0%</span>
+                        </div>
+                        <div class="w-full bg-paper-200 dark:bg-ink-700 h-2 rounded-full overflow-hidden">
+                            <div id="progress-bar-fill"
+                                class="bg-pen-600 dark:bg-pen-400 h-full w-0 transition-[width] duration-normal rounded-full"
+                                style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-ink-500 dark:text-paper-500 mt-2">
+                            <span id="progress-text" class="tabular-nums">0 / 0 완료</span>
+                        </div>
+                    </div>
+
+                    <!-- Header Buttons -->
+                    <div class="flex items-center gap-2" data-enter data-enter-delay="3">
+                        <button id="today-btn-desktop" type="button"
+                            class="hidden sm:flex btn-step px-4 py-2 text-sm font-medium bg-paper-100 dark:bg-ink-800 text-ink-700 dark:text-paper-300 hover:bg-paper-200 dark:hover:bg-ink-700 rounded-control items-center gap-2"
+                            aria-label="오늘의 할 일 보기">
+                            <i data-lucide="calendar" class="w-4 h-4"></i> 오늘
+                        </button>
+
+                        <button id="theme-toggle-btn" type="button" aria-label="테마 전환"
+                            class="btn-step p-2 rounded-control text-ink-500 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-800 border border-paper-200 dark:border-ink-700">
+                            <i id="theme-icon-sun" data-lucide="sun" class="w-5 h-5 hidden"></i>
+                            <i id="theme-icon-moon" data-lucide="moon" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full">
+        <div class="wrap py-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Left: Calendar (7/12) -->
+                <section
+                    class="lg:col-span-7 flex flex-col bg-paper-50 dark:bg-ink-900 rounded-panel border border-paper-200 dark:border-ink-800 overflow-hidden"
+                    data-enter>
+                    <!-- Calendar Navigation -->
+                    <div
+                        class="px-6 py-4 border-b border-paper-200 dark:border-ink-800 flex items-center justify-between">
+                        <h2 id="current-month-year" class="text-lg font-medium text-ink-900 dark:text-paper-100">2026년
+                            11월</h2>
+                        <div class="flex items-center gap-1">
+                            <button id="prev-month-btn" type="button" aria-label="이전 달"
+                                class="btn-step p-2 rounded-control text-ink-600 dark:text-paper-400 hover:bg-paper-100 dark:hover:bg-ink-800">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button id="next-month-btn" type="button" aria-label="다음 달"
+                                class="btn-step p-2 rounded-control text-ink-600 dark:text-paper-400 hover:bg-paper-100 dark:hover:bg-ink-800">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Days Header -->
+                    <div
+                        class="grid grid-cols-7 border-b border-paper-200 dark:border-ink-800 bg-paper-100/50 dark:bg-ink-800/50 text-center font-medium text-xs py-3">
+                        <div class="text-ink-600 dark:text-paper-400">일</div>
+                        <div class="text-ink-600 dark:text-paper-400">월</div>
+                        <div class="text-ink-600 dark:text-paper-400">화</div>
+                        <div class="text-ink-600 dark:text-paper-400">수</div>
+                        <div class="text-ink-600 dark:text-paper-400">목</div>
+                        <div class="text-ink-600 dark:text-paper-400">금</div>
+                        <div class="text-ink-600 dark:text-paper-400">토</div>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div id="calendar-grid" class="grid grid-cols-7 flex-1 bg-paper-100 dark:bg-ink-800 gap-px">
+                    </div>
+                </section>
+
+                <!-- Right: Todo List & Form (5/12) -->
+                <section class="lg:col-span-5 flex flex-col gap-4" data-enter data-enter-delay="1">
+
+                    <!-- Add New Todo Card -->
+                    <div
+                        class="bg-paper-50 dark:bg-ink-900 rounded-panel p-5 border border-paper-200 dark:border-ink-800 card-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-base font-medium text-ink-900 dark:text-paper-100">할 일 추가</h3>
+                            <span id="selected-date-badge"
+                                class="px-3 py-1 bg-pen-50 dark:bg-pen-900/30 text-pen-700 dark:text-pen-300 text-xs font-medium rounded-control border border-pen-100 dark:border-pen-800/50">2026-11-12</span>
+                        </div>
+
+                        <form id="add-todo-form" class="space-y-3">
+                            <div>
+                                <input type="text" id="todo-title-input" placeholder="할 일 제목" required
+                                    class="w-full px-3 py-2.5 text-sm bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control focus:outline-none focus:ring-2 focus:ring-pen-500/30 focus:border-pen-500 text-ink-900 dark:text-paper-100 placeholder-ink-500 dark:placeholder-paper-500 transition-colors duration-fast">
+                            </div>
+
+                            <div>
+                                <textarea id="todo-desc-input" rows="2" placeholder="상세 설명 (선택)"
+                                    class="w-full px-3 py-2 text-sm bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control focus:outline-none focus:ring-2 focus:ring-pen-500/30 focus:border-pen-500 text-ink-900 dark:text-paper-100 placeholder-ink-500 dark:placeholder-paper-500 resize-none transition-colors duration-fast"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-ink-500 dark:text-paper-400 mb-1">우선순위</label>
+                                    <select id="todo-priority-input"
+                                        class="w-full px-3 py-2 text-xs font-medium bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control focus:outline-none focus:ring-2 focus:ring-pen-500/30 text-ink-900 dark:text-paper-100">
+                                        <option value="low">낮음</option>
+                                        <option value="medium" selected>보통</option>
+                                        <option value="high">높음</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-ink-500 dark:text-paper-400 mb-1">카테고리</label>
+                                    <select id="todo-category-input"
+                                        class="w-full px-3 py-2 text-xs font-medium bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control focus:outline-none focus:ring-2 focus:ring-pen-500/30 text-ink-900 dark:text-paper-100">
+                                        <option value="etc">기타</option>
+                                        <option value="work">업무</option>
+                                        <option value="study">공부</option>
+                                        <option value="personal">개인</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                class="btn-step w-full py-2.5 px-4 bg-pen-600 hover:bg-pen-700 text-white font-medium text-sm rounded-control flex items-center justify-center gap-2"
+                                aria-label="할 일 등록">
+                                <i data-lucide="plus" class="w-4 h-4"></i> 등록
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Todo List & Filter Toolbar -->
+                    <div
+                        class="bg-paper-50 dark:bg-ink-900 rounded-panel p-5 border border-paper-200 dark:border-ink-800 flex-1 flex flex-col min-h-0 card-lift">
+                        <!-- Filter Section Header -->
+                        <div class="flex flex-col gap-3 mb-4 pb-3 border-b border-paper-200 dark:border-ink-800">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-medium text-ink-900 dark:text-paper-100" id="todo-list-title">
+                                    11월 12일 할 일</h3>
+                                <span id="todo-count-badge"
+                                    class="text-xs font-medium px-2 py-0.5 rounded-full bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 tabular-nums">0개</span>
+                            </div>
+
+                            <!-- Category Filter Chips -->
+                            <div id="category-filters" class="flex flex-wrap gap-2" role="group" aria-label="카테고리 필터">
+                                <button data-cat="all"
+                                    class="filter-cat-btn btn-step px-3 py-1.5 rounded-control font-medium bg-pen-600 text-white"
+                                    aria-pressed="true">전체</button>
+                                <button data-cat="work"
+                                    class="filter-cat-btn btn-step px-3 py-1.5 rounded-control font-medium bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-700"
+                                    aria-pressed="false">업무</button>
+                                <button data-cat="study"
+                                    class="filter-cat-btn btn-step px-3 py-1.5 rounded-control font-medium bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-700"
+                                    aria-pressed="false">공부</button>
+                                <button data-cat="personal"
+                                    class="filter-cat-btn btn-step px-3 py-1.5 rounded-control font-medium bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-700"
+                                    aria-pressed="false">개인</button>
+                                <button data-cat="etc"
+                                    class="filter-cat-btn btn-step px-3 py-1.5 rounded-control font-medium bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-700"
+                                    aria-pressed="false">기타</button>
+                            </div>
+
+                            <!-- Status & Priority Dropdowns -->
+                            <div class="flex items-center gap-2 pt-1">
+                                <select id="filter-status-select"
+                                    class="btn-step px-3 py-1.5 text-xs bg-paper-100 dark:bg-ink-800/60 border border-paper-200 dark:border-ink-700 rounded-control text-ink-700 dark:text-paper-300 focus:outline-none focus:ring-2 focus:ring-pen-500/30"
+                                    aria-label="상태 필터">
+                                    <option value="all">전체</option>
+                                    <option value="active">미완료</option>
+                                    <option value="completed">완료</option>
+                                </select>
+                                <select id="filter-priority-select"
+                                    class="btn-step px-3 py-1.5 text-xs bg-paper-100 dark:bg-ink-800/60 border border-paper-200 dark:border-ink-700 rounded-control text-ink-700 dark:text-paper-300 focus:outline-none focus:ring-2 focus:ring-pen-500/30"
+                                    aria-label="우선순위 필터">
+                                    <option value="all">전체</option>
+                                    <option value="high">높음</option>
+                                    <option value="medium">보통</option>
+                                    <option value="low">낮음</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Todo List Items -->
+                        <div id="todo-items-container" class="space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Hover Preview Popover -->
+    <div id="hover-popover"
+        class="fixed z-50 hidden bg-paper-50 dark:bg-ink-900 text-ink-900 dark:text-paper-100 p-3 rounded-card shadow-lg border border-paper-200 dark:border-ink-800 text-xs max-w-xs pointer-events-none transition-opacity duration-fast">
+        <div id="popover-date"
+            class="font-medium border-b border-paper-200 dark:border-ink-800 pb-1.5 mb-2 text-ink-900 dark:text-paper-100">
+            2026-11-12</div>
+        <div id="popover-content" class="space-y-2 max-h-60 overflow-y-auto"></div>
+    </div>
+
+    <!-- Edit/Detail Modal -->
+    <div id="todo-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-ink-950/60 backdrop-blur-sm transition-opacity duration-fast"
+        role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="bg-paper-50 dark:bg-ink-900 rounded-panel max-w-md w-full p-6 shadow-xl border border-paper-200 dark:border-ink-800 space-y-4"
+            data-enter>
+            <div class="flex items-center justify-between border-b border-paper-200 dark:border-ink-800 pb-3">
+                <h3 id="modal-title" class="text-base font-medium text-ink-900 dark:text-paper-100">할 일 상세</h3>
+                <button id="modal-close-btn" type="button"
+                    class="btn-step text-ink-400 hover:text-ink-600 dark:hover:text-paper-200 p-1 rounded-control"
+                    aria-label="닫기">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="edit-todo-form" class="space-y-4">
+                <input type="hidden" id="modal-todo-id">
+
+                <div>
+                    <label class="block text-xs font-medium text-ink-600 dark:text-paper-400 mb-1">날짜</label>
+                    <input type="date" id="modal-todo-date" required
+                        class="w-full px-3 py-2 text-sm bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control text-ink-900 dark:text-paper-100 focus:outline-none focus:ring-2 focus:ring-pen-500/30">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-ink-600 dark:text-paper-400 mb-1">제목</label>
+                    <input type="text" id="modal-todo-title" required
+                        class="w-full px-3 py-2.5 text-sm bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control text-ink-900 dark:text-paper-100 focus:outline-none focus:ring-2 focus:ring-pen-500/30">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-ink-600 dark:text-paper-400 mb-1">상세 설명</label>
+                    <textarea id="modal-todo-desc" rows="3"
+                        class="w-full px-3 py-2 text-sm bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control text-ink-900 dark:text-paper-100 focus:outline-none focus:ring-2 focus:ring-pen-500/30 resize-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-ink-600 dark:text-paper-400 mb-1">우선순위</label>
+                        <select id="modal-todo-priority"
+                            class="w-full px-3 py-2 text-xs bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control text-ink-900 dark:text-paper-100 focus:outline-none focus:ring-2 focus:ring-pen-500/30">
+                            <option value="low">낮음</option>
+                            <option value="medium">보통</option>
+                            <option value="high">높음</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-ink-600 dark:text-paper-400 mb-1">카테고리</label>
+                        <select id="modal-todo-category"
+                            class="w-full px-3 py-2 text-xs bg-paper-100 dark:bg-ink-800/50 border border-paper-200 dark:border-ink-700 rounded-control text-ink-900 dark:text-paper-100 focus:outline-none focus:ring-2 focus:ring-pen-500/30">
+                            <option value="etc">기타</option>
+                            <option value="work">업무</option>
+                            <option value="study">공부</option>
+                            <option value="personal">개인</option>
+                            <option value="done">완료</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 gap-3">
+                    <button type="button" id="modal-delete-btn"
+                        class="btn-step px-4 py-2 bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-700 text-xs font-medium rounded-control flex items-center gap-1.5"
+                        aria-label="삭제">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> 삭제
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="modal-cancel-btn"
+                            class="btn-step px-4 py-2 bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-700 text-xs font-medium rounded-control">취소</button>
+                        <button type="submit"
+                            class="btn-step px-5 py-2 bg-pen-600 hover:bg-pen-700 text-white text-xs font-medium rounded-control">저장</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        /**
+         * Todo Calendar Application — Unslopped + Taste Polished
+         * Architecture: State-Driven Pure JavaScript
+         */
+
+        const STORAGE_KEY = 'todo_calendar_data';
+
+        const initialTodos = [
+            { id: 'todo-1', title: '주간 기획 회의 준비', description: '3분기 프로젝트 로드맵 서류 정리 및 발표자료 제작', date: formatDate(new Date()), priority: 'high', category: 'work', completed: false },
+            { id: 'todo-2', title: '자바스크립트 공부', description: 'ES6+ 비동기 처리 및 Web API 챕터 복습', date: formatDate(new Date()), priority: 'medium', category: 'study', completed: true }
+        ];
+
+        let state = {
+            todos: [],
+            currentYear: new Date().getFullYear(),
+            currentMonth: new Date().getMonth(),
+            selectedDate: formatDate(new Date()),
+            filterCategory: 'all',
+            filterStatus: 'all',
+            filterPriority: 'all'
+        };
+
+        const elements = {
+            calendarGrid: document.getElementById('calendar-grid'),
+            currentMonthYear: document.getElementById('current-month-year'),
+            prevMonthBtn: document.getElementById('prev-month-btn'),
+            nextMonthBtn: document.getElementById('next-month-btn'),
+            todayBtn: document.getElementById('today-btn'),
+            todayBtnDesktop: document.getElementById('today-btn-desktop'),
+            themeToggleBtn: document.getElementById('theme-toggle-btn'),
+            themeIconSun: document.getElementById('theme-icon-sun'),
+            themeIconMoon: document.getElementById('theme-icon-moon'),
+            progressBarFill: document.getElementById('progress-bar-fill'),
+            progressPercent: document.getElementById('progress-percent'),
+            progressText: document.getElementById('progress-text'),
+            selectedDateBadge: document.getElementById('selected-date-badge'),
+            addTodoForm: document.getElementById('add-todo-form'),
+            todoTitleInput: document.getElementById('todo-title-input'),
+            todoDescInput: document.getElementById('todo-desc-input'),
+            todoPriorityInput: document.getElementById('todo-priority-input'),
+            todoCategoryInput: document.getElementById('todo-category-input'),
+            todoItemsContainer: document.getElementById('todo-items-container'),
+            todoListTitle: document.getElementById('todo-list-title'),
+            todoCountBadge: document.getElementById('todo-count-badge'),
+            categoryFilterBtns: document.querySelectorAll('.filter-cat-btn'),
+            filterStatusSelect: document.getElementById('filter-status-select'),
+            filterPrioritySelect: document.getElementById('filter-priority-select'),
+            hoverPopover: document.getElementById('hover-popover'),
+            popoverDate: document.getElementById('popover-date'),
+            popoverContent: document.getElementById('popover-content'),
+            todoModal: document.getElementById('todo-modal'),
+            modalCloseBtn: document.getElementById('modal-close-btn'),
+            modalCancelBtn: document.getElementById('modal-cancel-btn'),
+            editTodoForm: document.getElementById('edit-todo-form'),
+            modalTodoId: document.getElementById('modal-todo-id'),
+            modalTodoDate: document.getElementById('modal-todo-date'),
+            modalTodoTitle: document.getElementById('modal-todo-title'),
+            modalTodoDesc: document.getElementById('modal-todo-desc'),
+            modalTodoPriority: document.getElementById('modal-todo-priority'),
+            modalTodoCategory: document.getElementById('modal-todo-category'),
+            modalDeleteBtn: document.getElementById('modal-delete-btn')
+        };
+
+        // Priority: single accent (pen blue) with weight variation only
+        const PRIORITY_MAP = {
+            high: { label: '높음', weight: '500', dotOpacity: '1' },
+            medium: { label: '보통', weight: '400', dotOpacity: '0.6' },
+            low: { label: '낮음', weight: '400', dotOpacity: '0.3' }
+        };
+
+        // Category: neutral badges, text only
+        const CATEGORY_MAP = {
+            work: { label: '업무' },
+            study: { label: '공부' },
+            personal: { label: '개인' },
+            etc: { label: '기타' },
+            done: { label: '완료' }
+        };
+
+        function formatDate(date) {
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function initApp() {
+            // Theme
+            const savedTheme = localStorage.getItem('todo_theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                elements.themeIconSun.classList.remove('hidden');
+                elements.themeIconMoon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                elements.themeIconSun.classList.add('hidden');
+                elements.themeIconMoon.classList.remove('hidden');
+            }
+
+            // Data
+            const storedData = localStorage.getItem(STORAGE_KEY);
+            if (storedData) {
+                try { state.todos = JSON.parse(storedData); }
+                catch (e) { console.error('Failed to parse local data', e); state.todos = [...initialTodos]; }
+            } else {
+                state.todos = [...initialTodos];
+                saveTodos();
+            }
+
+            bindEvents();
+            render();
+            lucide.createIcons();
+        }
+
+        function saveTodos() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.todos));
+            render();
+        }
+
+        function render() {
+            renderCalendar();
+            renderTodoList();
+            renderProgressBar();
+            elements.selectedDateBadge.textContent = state.selectedDate;
+            lucide.createIcons();
+        }
+
+        function renderCalendar() {
+            const year = state.currentYear;
+            const month = state.currentMonth;
+
+            elements.currentMonthYear.textContent = `${year}년 ${month + 1}월`;
+            elements.calendarGrid.innerHTML = '';
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthLastDate = new Date(year, month, 0).getDate();
+            const todayFormatted = formatDate(new Date());
+
+            // Previous month padding
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                const dayNum = prevMonthLastDate - i;
+                elements.calendarGrid.appendChild(createCalendarCell(dayNum, true, null));
+            }
+
+            // Current month
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === todayFormatted;
+                const isSelected = dateStr === state.selectedDate;
+                elements.calendarGrid.appendChild(createCalendarCell(day, false, dateStr, isToday, isSelected));
+            }
+
+            // Next month padding
+            const totalRenderedSoFar = firstDayIndex + totalDaysInMonth;
+            const totalGridCells = totalRenderedSoFar > 35 ? 42 : 35;
+            const nextMonthDays = totalGridCells - totalRenderedSoFar;
+            for (let day = 1; day <= nextMonthDays; day++) {
+                elements.calendarGrid.appendChild(createCalendarCell(day, true, null));
+            }
+        }
+
+        function createCalendarCell(dayNum, isOtherMonth, dateStr, isToday = false, isSelected = false) {
+            const cell = document.createElement('div');
+            cell.className = `calendar-cell relative bg-paper-50 dark:bg-ink-900 p-2 flex flex-col justify-between cell-hover select-none ${isOtherMonth ? 'opacity-40' : 'cursor-pointer'} ${isSelected ? 'ring-2 ring-pen-500 ring-inset z-10' : ''}`;
+
+            const topDiv = document.createElement('div');
+            topDiv.className = 'flex items-center justify-between';
+
+            const numSpan = document.createElement('span');
+            numSpan.className = `text-xs font-medium inline-flex items-center justify-center w-7 h-7 rounded-full ${isToday ? 'bg-pen-600 text-white' : isSelected ? 'text-pen-600 dark:text-pen-400 font-medium' : 'text-ink-700 dark:text-paper-300'}`;
+            numSpan.textContent = dayNum;
+            topDiv.appendChild(numSpan);
+
+            // Signature: blue dot indicator for days with active todos
+            if (!isOtherMonth && dateStr) {
+                const dayTodos = state.todos.filter(t => t.date === dateStr && !t.completed && t.category !== 'done');
+                if (dayTodos.length > 0) {
+                    const dot = document.createElement('span');
+                    dot.className = 'w-1.5 h-1.5 rounded-full bg-pen-600 dark:bg-pen-400 shrink-0';
+                    dot.setAttribute('aria-hidden', 'true');
+                    topDiv.appendChild(dot);
+                }
+            }
+
+            cell.appendChild(topDiv);
+
+            if (!isOtherMonth && dateStr) {
+                cell.dataset.date = dateStr;
+
+                const dateTodos = state.todos.filter(t => t.date === dateStr);
+                const todoContainer = document.createElement('div');
+                todoContainer.className = 'mt-1.5 space-y-1 overflow-hidden flex-1';
+
+                const maxDisplay = 2;
+                dateTodos.slice(0, maxDisplay).forEach(todo => {
+                    const isDone = todo.completed || todo.category === 'done';
+                    const cat = CATEGORY_MAP[todo.category] || CATEGORY_MAP.etc;
+
+                    const itemBadge = document.createElement('div');
+                    itemBadge.className = `text-xs truncate px-2 py-1 rounded-control font-medium border flex items-center gap-1.5 ${isDone ? 'opacity-50 bg-paper-100 text-ink-500 border-paper-200 dark:bg-ink-800 dark:text-paper-500 dark:border-ink-700' : 'bg-white dark:bg-ink-800 border-paper-200 dark:border-ink-700 text-ink-700 dark:text-paper-300'}`;
+
+                    // Priority dot (pen blue, opacity by weight)
+                    const prio = PRIORITY_MAP[todo.priority] || PRIORITY_MAP.low;
+                    const dot = document.createElement('span');
+                    dot.className = `w-1.5 h-1.5 rounded-full shrink-0 bg-pen-600 dark:bg-pen-400`;
+                    dot.style.opacity = prio.dotOpacity;
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'truncate';
+                    textSpan.textContent = todo.title;
+
+                    itemBadge.appendChild(dot);
+                    itemBadge.appendChild(textSpan);
+                    todoContainer.appendChild(itemBadge);
+                });
+
+                if (dateTodos.length > maxDisplay) {
+                    const moreBadge = document.createElement('div');
+                    moreBadge.className = 'text-xs font-medium text-pen-600 dark:text-pen-400 pl-1';
+                    moreBadge.textContent = `+${dateTodos.length - maxDisplay} 더보기`;
+                    todoContainer.appendChild(moreBadge);
+                }
+
+                cell.appendChild(todoContainer);
+
+                cell.addEventListener('click', () => {
+                    state.selectedDate = dateStr;
+                    render();
+                });
+
+                cell.addEventListener('mouseenter', (e) => showPopover(e, dateStr));
+                cell.addEventListener('mouseleave', hidePopover);
+            }
+
+            return cell;
+        }
+
+        function showPopover(event, dateStr) {
+            const dateTodos = state.todos.filter(t => t.date === dateStr);
+            if (dateTodos.length === 0) return;
+
+            elements.popoverDate.textContent = `${dateStr} (${dateTodos.length}개)`;
+            elements.popoverContent.innerHTML = '';
+
+            dateTodos.forEach(todo => {
+                const isDone = todo.completed || todo.category === 'done';
+                const prio = PRIORITY_MAP[todo.priority] || PRIORITY_MAP.low;
+                const cat = CATEGORY_MAP[todo.category] || CATEGORY_MAP.etc;
+
+                const item = document.createElement('div');
+                item.className = 'p-2 rounded-control bg-paper-100 dark:bg-ink-800 border border-paper-200 dark:border-ink-700';
+                item.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-medium text-xs ${isDone ? 'line-through text-ink-500 dark:text-paper-500' : 'text-ink-900 dark:text-paper-100'} truncate">${escapeHtml(todo.title)}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-control bg-paper-200 dark:bg-ink-700 text-ink-600 dark:text-paper-400">${cat.label}</span>
+                    </div>
+                    ${todo.description ? `<p class="text-xs text-ink-500 dark:text-paper-500 line-clamp-2 mb-1">${escapeHtml(todo.description)}</p>` : ''}
+                    <div class="flex items-center gap-1.5 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-pen-600 dark:bg-pen-400" style="opacity:${prio.dotOpacity}"></span>
+                        <span class="text-ink-600 dark:text-paper-400">${prio.label}</span>
+                    </div>
+                `;
+                elements.popoverContent.appendChild(item);
+            });
+
+            const rect = event.currentTarget.getBoundingClientRect();
+            const popoverWidth = 260;
+            let left = rect.left + window.scrollX + (rect.width / 2) - (popoverWidth / 2);
+            let top = rect.bottom + window.scrollY + 8;
+
+            if (left + popoverWidth > window.innerWidth - 12) left = window.innerWidth - popoverWidth - 12;
+            if (left < 12) left = 12;
+
+            elements.hoverPopover.style.left = `${left}px`;
+            elements.hoverPopover.style.top = `${top}px`;
+            elements.hoverPopover.classList.remove('hidden');
+        }
+
+        function hidePopover() {
+            elements.hoverPopover.classList.add('hidden');
+        }
+
+        function renderTodoList() {
+            elements.todoListTitle.textContent = `${state.selectedDate} 할 일`;
+
+            let filtered = state.todos.filter(t => t.date === state.selectedDate);
+
+            if (state.filterCategory !== 'all') {
+                if (state.filterCategory === 'done') {
+                    filtered = filtered.filter(t => t.completed || t.category === 'done');
+                } else {
+                    filtered = filtered.filter(t => t.category === state.filterCategory && !t.completed);
+                }
+            }
+
+            if (state.filterStatus === 'active') {
+                filtered = filtered.filter(t => !t.completed && t.category !== 'done');
+            } else if (state.filterStatus === 'completed') {
+                filtered = filtered.filter(t => t.completed || t.category === 'done');
+            }
+
+            if (state.filterPriority !== 'all') {
+                filtered = filtered.filter(t => t.priority === state.filterPriority);
+            }
+
+            elements.todoCountBadge.textContent = `${filtered.length}개`;
+            elements.todoItemsContainer.innerHTML = '';
+
+            if (filtered.length === 0) {
+                elements.todoItemsContainer.innerHTML = `
+                    <div class="py-10 text-center text-ink-500 dark:text-paper-500">
+                        <i data-lucide="clipboard" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                        <p class="text-sm">할 일이 없습니다</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            filtered.forEach(todo => {
+                const isCompleted = todo.completed || todo.category === 'done';
+                const prio = PRIORITY_MAP[todo.priority] || PRIORITY_MAP.low;
+                const cat = CATEGORY_MAP[todo.category] || CATEGORY_MAP.etc;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-card border card-lift flex items-start justify-between gap-3 ${isCompleted ? 'bg-paper-100/70 dark:bg-ink-800/50 border-paper-200 dark:border-ink-700 opacity-60' : 'bg-white dark:bg-ink-900 border-paper-200 dark:border-ink-700'}`;
+
+                card.innerHTML = `
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <button type="button" class="todo-check-btn mt-0.5 w-5 h-5 rounded-control border flex items-center justify-center shrink-0 transition-colors duration-fast ${isCompleted ? 'bg-pen-600 border-pen-600 text-white' : 'border-paper-300 dark:border-ink-600 hover:border-pen-500'}" data-id="${todo.id}" aria-label="${isCompleted ? '미완료로 변경' : '완료로 변경'}">
+                            <i data-lucide="check" class="w-3 h-3"></i>
+                        </button>
+
+                        <div class="flex-1 min-w-0 cursor-pointer todo-detail-trigger" data-id="${todo.id}">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="text-sm font-medium truncate ${isCompleted ? 'line-through text-ink-500 dark:text-paper-500' : 'text-ink-900 dark:text-paper-100'}">${escapeHtml(todo.title)}</span>
+                            </div>
+
+                            ${todo.description ? `<p class="text-xs text-ink-500 dark:text-paper-500 line-clamp-2 mb-2 ${isCompleted ? 'line-through opacity-70' : ''}">${escapeHtml(todo.description)}</p>` : ''}
+
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="px-2 py-0.5 rounded-control text-xs font-medium bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 border border-paper-200 dark:border-ink-700">${cat.label}</span>
+                                <span class="px-2 py-0.5 rounded-control text-xs font-medium border flex items-center gap-1 bg-pen-50 dark:bg-pen-900/30 text-pen-700 dark:text-pen-300 border-pen-100 dark:border-pen-800/50">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-pen-600 dark:bg-pen-400" style="opacity:${prio.dotOpacity}"></span>
+                                    ${prio.label}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="todo-delete-quick text-ink-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-control transition-colors duration-fast" data-id="${todo.id}" aria-label="삭제">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                `;
+
+                elements.todoItemsContainer.appendChild(card);
+            });
+
+            // Bind events
+            elements.todoItemsContainer.querySelectorAll('.todo-check-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); toggleTodoComplete(btn.dataset.id); });
+            });
+            elements.todoItemsContainer.querySelectorAll('.todo-detail-trigger').forEach(trigger => {
+                trigger.addEventListener('click', () => openModal(trigger.dataset.id));
+            });
+            elements.todoItemsContainer.querySelectorAll('.todo-delete-quick').forEach(btn => {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); deleteTodo(btn.dataset.id); });
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderProgressBar() {
+            const total = state.todos.length;
+            if (total === 0) {
+                elements.progressBarFill.style.width = '0%';
+                elements.progressPercent.textContent = '0%';
+                elements.progressText.textContent = '0 / 0 완료';
+                return;
+            }
+            const completedCount = state.todos.filter(t => t.completed || t.category === 'done').length;
+            const percentage = Math.round((completedCount / total) * 100);
+            elements.progressBarFill.style.width = `${percentage}%`;
+            elements.progressPercent.textContent = `${percentage}%`;
+            elements.progressText.textContent = `${completedCount} / ${total} 완료`;
+        }
+
+        function toggleTodoComplete(id) {
+            state.todos = state.todos.map(t => {
+                if (t.id === id) {
+                    const newStatus = !t.completed;
+                    return { ...t, completed: newStatus, category: newStatus ? 'done' : (t.category === 'done' ? 'etc' : t.category) };
+                }
+                return t;
+            });
+            saveTodos();
+        }
+
+        function addTodo(title, description, priority, category) {
+            state.todos.push({ id: 'todo-' + Date.now(), title: title.trim(), description: description.trim(), date: state.selectedDate, priority, category, completed: category === 'done' });
+            saveTodos();
+        }
+
+        function deleteTodo(id) {
+            state.todos = state.todos.filter(t => t.id !== id);
+            saveTodos();
+        }
+
+        function openModal(id) {
+            const todo = state.todos.find(t => t.id === id);
+            if (!todo) return;
+
+            elements.modalTodoId.value = todo.id;
+            elements.modalTodoDate.value = todo.date;
+            elements.modalTodoTitle.value = todo.title;
+            elements.modalTodoDesc.value = todo.description || '';
+            elements.modalTodoPriority.value = todo.priority;
+            elements.modalTodoCategory.value = todo.completed ? 'done' : todo.category;
+
+            elements.todoModal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            elements.todoModal.classList.add('hidden');
+        }
+
+        function bindEvents() {
+            // Theme
+            elements.themeToggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('todo_theme', isDark ? 'dark' : 'light');
+                elements.themeIconSun.classList.toggle('hidden', !isDark);
+                elements.themeIconMoon.classList.toggle('hidden', isDark);
+                lucide.createIcons();
+            });
+
+            // Month nav
+            elements.prevMonthBtn.addEventListener('click', () => {
+                if (state.currentMonth === 0) { state.currentMonth = 11; state.currentYear -= 1; }
+                else { state.currentMonth -= 1; }
+                render();
+            });
+            elements.nextMonthBtn.addEventListener('click', () => {
+                if (state.currentMonth === 11) { state.currentMonth = 0; state.currentYear += 1; }
+                else { state.currentMonth += 1; }
+                render();
+            });
+
+            // Today
+            const goToday = () => {
+                const now = new Date();
+                state.currentYear = now.getFullYear();
+                state.currentMonth = now.getMonth();
+                state.selectedDate = formatDate(now);
+                render();
+            };
+            elements.todayBtn.addEventListener('click', goToday);
+            elements.todayBtnDesktop.addEventListener('click', goToday);
+
+            // Add todo
+            elements.addTodoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const title = elements.todoTitleInput.value;
+                const desc = elements.todoDescInput.value;
+                const priority = elements.todoPriorityInput.value;
+                const category = elements.todoCategoryInput.value;
+                if (!title.trim()) return;
+                addTodo(title, desc, priority, category);
+                elements.todoTitleInput.value = '';
+                elements.todoDescInput.value = '';
+                elements.todoPriorityInput.value = 'medium';
+                elements.todoCategoryInput.value = 'etc';
+            });
+
+            // Category filter chips
+            elements.categoryFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elements.categoryFilterBtns.forEach(b => {
+                        b.className = 'filter-cat-btn btn-step px-3 py-1.5 rounded-control font-medium bg-paper-100 dark:bg-ink-800 text-ink-600 dark:text-paper-400 hover:bg-paper-200 dark:hover:bg-ink-700';
+                        b.setAttribute('aria-pressed', 'false');
+                    });
+                    btn.className = 'filter-cat-btn btn-step px-3 py-1.5 rounded-control font-medium bg-pen-600 text-white';
+                    btn.setAttribute('aria-pressed', 'true');
+                    state.filterCategory = btn.dataset.cat;
+                    renderTodoList();
+                });
+            });
+
+            // Dropdown filters
+            elements.filterStatusSelect.addEventListener('change', (e) => { state.filterStatus = e.target.value; renderTodoList(); });
+            elements.filterPrioritySelect.addEventListener('change', (e) => { state.filterPriority = e.target.value; renderTodoList(); });
+
+            // Modal
+            elements.modalCloseBtn.addEventListener('click', closeModal);
+            elements.modalCancelBtn.addEventListener('click', closeModal);
+            elements.todoModal.addEventListener('click', (e) => { if (e.target === elements.todoModal) closeModal(); });
+
+            elements.editTodoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = elements.modalTodoId.value;
+                const date = elements.modalTodoDate.value;
+                const title = elements.modalTodoTitle.value;
+                const desc = elements.modalTodoDesc.value;
+                const priority = elements.modalTodoPriority.value;
+                const category = elements.modalTodoCategory.value;
+
+                state.todos = state.todos.map(t => {
+                    if (t.id === id) {
+                        const isDone = category === 'done';
+                        return { ...t, date, title: title.trim(), description: desc.trim(), priority, category, completed: isDone };
+                    }
+                    return t;
+                });
+                closeModal();
+                saveTodos();
+            });
+
+            elements.modalDeleteBtn.addEventListener('click', () => {
+                const id = elements.modalTodoId.value;
+                deleteTodo(id);
+                closeModal();
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"').replace(/'/g, '&#039;');
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+
+</html>
